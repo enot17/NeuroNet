@@ -11,19 +11,15 @@ def activationFunction(x):
 class Neuron:
 
     def __init__(self, inputs):
-        self.output: float = 0
-        if type(inputs) == int:
-            self.inputs = [inputs]
-            self.weights = [rnd.random()]
-        else:
-            self.inputs = inputs
-            self.weights = []
-            for i in range(len(inputs)):
-                self.weights.append(rnd.random())
+        self.output = 0.0
+        self.inputs = inputs
+        self.weights = []
+        for i in range(len(inputs)):
+            self.weights.append(rnd.random())
 
     def activation(self):
-        for x in range(len(self.inputs)):
-            self.output += self.inputs[x] * self.weights[0]
+        for i in range(len(self.inputs)):
+            self.output += self.inputs[i] * self.weights[i]
         self.output = activationFunction(self.output)
 
 
@@ -36,15 +32,6 @@ class Layer:
     def calkNeurons(self):
         for n in self.neurons:
             n.activation()
-
-    def getInputs(self) -> list[float]:
-        l = []
-        for i in range(self.size):
-            l.append(self.neurons[i].output)
-        return l
-
-    def __len__(self):
-        return len(self.neurons)
 
 
 class Net:
@@ -103,4 +90,3 @@ result = net.predict([
     [0, 0]
 ])
 print(result)
-
