@@ -1,88 +1,69 @@
 import math
-import random as rnd
+import random
 
 
-def activationFunction(x):
-    if x <= 0:
-        return 0
-    return 1
-
-
-class Neuron:
-
-    def __init__(self, inputs):
-        self.output = 0.0
-        self.inputs = inputs
-        self.weights = []
-        for i in range(len(inputs)):
-            self.weights.append(rnd.random())
-
-    def activation(self):
-        for i in range(len(self.inputs)):
-            self.output += self.inputs[i] * self.weights[i]
-        self.output = activationFunction(self.output)
-
-
-class Layer:
-
-    def __init__(self, n):
-        self.size: int = n
-        self.neurons: list[Neuron] = []
-
-    def calkNeurons(self):
-        for n in self.neurons:
-            n.activation()
+def activationFunction(x) -> float:
+    return 1 / (1 + math.e ** -x)
 
 
 class Net:
 
-    def __init__(self, *lays):
-        self.size = len(lays)
-        self.layers = []
-        for l in lays:
-            self.layers.append(Layer(l))
+    def __init__(self, *lays) -> None:
+        self.inputs: list[list[float]] = []
+        self.weights: list[list[list[float]]] = []
+        self.errors: list[float] = []
 
-    def fit(self, xs, targets):
-        for i in range(len(xs)):
-            self.assignInputs(xs[i])
+        for i in lays:
+            self.inputs.append([0.0] * i)
+
+        for i in range(len(lays) - 1):
+            self.weights.append([])
+            for j in range(lays[i]):
+                a = [j] * lays[i + 1]
+                self.weights[i].append(a)
+
+    def fit(self, train_inputs: list[list[float]],
+            targets: list[list[float]],
+            learning_rate: float
+            ) -> None:
+        for i in range(len(train_inputs)):
+            self.inputs[0] = train_inputs[i]
             self.forward()
-            er = self.error(targets[i])
-            self.backPropagation(er)
-
-    def assignInputs(self, x):
-        for i in range(len(x)):
-            self.layers[0].neurons.append(Neuron(x[i]))
+            self.calkError(targets[i])
+            self.backPropagation(learning_rate)
 
     def forward(self):
-        self.layers[0].calkNeurons()
-        for i in range(1, self.size):
-            prev = self.layers[i - 1].getInputs()
-            for j in range(self.layers[i].size):
-                self.layers[i].neurons.append(Neuron(prev))
-            self.layers[i].calkNeurons()
+        for a in range(1, len(self.inputs)):
+            for c in range(len(self.inputs[a])):
+                for b in range(len(self.inputs[a - 1])):
+                    self.inputs[a][c] += self.inputs[a - 1][b] * self.weights[a - 1][b][c]
+                self.inputs[a][c] = activationFunction(self.inputs[a][c])
 
-    def error(self, target):
-        actual = 0
-        for neuron in self.layers[self.size - 1].neurons:
-            if actual < neuron.output:
-                actual = neuron.output
-        return (target - actual) ** 2
+    def calkError(self, targets: list[float]):
+        for i in range(len(self.last())):
+            self.errors.append(((self.last()[i] - targets[i]) ** 2) / len(self.last()))
 
-    def backPropagation(self, error):
+    def backPropagation(self, lr: float):
         pass
 
-    def predict(self, x):
+    def predict(self,test:list[list[float]]):
         return []
 
+    def last(self):
+        return self.inputs[len(self.inputs) - 1]
 
-net = Net(2, 3, 1)
+
+net: Net = Net(2, 3, 2)
 net.fit([
-    [10, 11],
-    [12, 21],
-    [13, 31],
-    [14, 41]
+    [10, 20],
+    [11, 22],
+    [13, 23],
+    [14, 24]
 ],
-    [111, 222, 333, 444]
+    [[1, 0],
+     [1, 0],
+     [1, 0],
+     [0, 1]], 0.1
 )
 
 result = net.predict([
@@ -90,3 +71,4 @@ result = net.predict([
     [0, 0]
 ])
 print(result)
+
