@@ -1,74 +1,121 @@
 import math
-import random
 
 
-def activationFunction(x) -> float:
+def activation(x: float) -> float:
     return 1 / (1 + math.e ** -x)
+
+
+def activation_derivatives(x: float):
+    return 1 - x
+
+
+def errorFunc(target, actual: float) -> float:
+    return (target - actual) ** 2
+
+
+def errorFunc_derivatives(target, actual: float):
+    return 2 * (target - actual)
+
+
+def dot(inputs, weights: list[float]) -> float:
+    s = 0
+    for j in range(len(inputs)):
+        s += inputs[j] * weights[j]
+    return s
+
+
+def create_inputs(layers: tuple[int]) -> list[list[float]]:
+    inputs: list[list[float]] = []
+    for i in range(len(layers)):
+        inputs.append([])
+        for j in range(layers[i]):
+            inputs[i].append(0.0)
+    return inputs
+
+
+def create_weights(layers: tuple[int]) -> list[list[list[float]]]:
+    w = []
+    for i in range(len(layers) - 1):
+        w.append([])
+        for j in range(layers[i + 1]):
+            w[i].append([0.5] * layers[i])
+    return w
 
 
 class Net:
 
-    def __init__(self, *lays) -> None:
-        self.inputs: list[list[float]] = []
-        self.weights: list[list[list[float]]] = []
+    def __init__(self, *layers):
+        self.layers: list[int] = list(layers)
+        self.layers_count: int = len(self.layers)
+        self.learning_rate: float = 0.1
+
         self.errors: list[float] = []
+        self.totalError: float = 0
 
-        for i in lays:
-            self.inputs.append([0.0] * i)
+        self.inputs: list[list[float]] = create_inputs(layers)
+        self.weights: list[list[list[float]]] = [
+            [[0.13, 0.23],
+             [0.14, 0.24],
+             [0.15, 0.25]],
 
-        for i in range(len(lays) - 1):
-            self.weights.append([])
-            for j in range(lays[i]):
-                a = [j] * lays[i + 1]
-                self.weights[i].append(a)
+            [[0.36, 0.46, 0.56],
+             [0.37, 0.47, 0.57]]
+        ]
 
-    def fit(self, train_inputs: list[list[float]],
-            targets: list[list[float]],
-            learning_rate: float
-            ) -> None:
-        for i in range(len(train_inputs)):
-            self.inputs[0] = train_inputs[i]
+    def get_neuron_in_layer_count(self, n: int) -> int:
+        return self.layers[n]
+
+    def get_last_layer_len(self) -> int:
+        return len(self.layers) - 1
+
+    def get_last_layer_neuron_count(self) -> int:
+        return self.layers[len(self.layers) - 1]
+
+    def learn(self, train_x, train_y: list[list[float]]) -> None:
+        self.errors = [0.0] * len(train_y)
+        for i in range(len(train_x)):
+            self.assign_inputs(train_x[i])
             self.forward()
-            self.calkError(targets[i])
-            self.backPropagation(learning_rate)
+            self.sample_error(i, train_y[i])
+        self.totalError = sum(self.errors)
+        self.back_propagation()
 
-    def forward(self):
-        for a in range(1, len(self.inputs)):
-            for c in range(len(self.inputs[a])):
-                for b in range(len(self.inputs[a - 1])):
-                    self.inputs[a][c] += self.inputs[a - 1][b] * self.weights[a - 1][b][c]
-                self.inputs[a][c] = activationFunction(self.inputs[a][c])
+    def assign_inputs(self, xs: list[float]):
+        self.inputs[0] = xs
 
-    def calkError(self, targets: list[float]):
-        for i in range(len(self.last())):
-            self.errors.append(((self.last()[i] - targets[i]) ** 2) / len(self.last()))
+    def forward(self) -> None:
+        for i in range(self.layers_count - 1):
+            for j in range(self.get_neuron_in_layer_count(i + 1)):
+                self.inputs[i + 1][j] = dot(self.inputs[i], self.weights[i][j])
+                self.inputs[i + 1][j] = activation(self.inputs[i + 1][j])
 
-    def backPropagation(self, lr: float):
+    def sample_error(self, index: int, train_y: list[float]) -> None:
+        for i in range(len(train_y)):
+            self.errors[index] += errorFunc(train_y[i], self.inputs[-1][i]) / len(train_y)
+
+    def back_propagation(self) -> None:
         pass
 
-    def predict(self,test:list[list[float]]):
-        return []
+    def local_errors(self):
+        pass
 
-    def last(self):
-        return self.inputs[len(self.inputs) - 1]
+    def update_weights(self):
+        pass
 
 
-net: Net = Net(2, 3, 2)
-net.fit([
-    [10, 20],
-    [11, 22],
-    [13, 23],
-    [14, 24]
-],
-    [[1, 0],
-     [1, 0],
-     [1, 0],
-     [0, 1]], 0.1
-)
+trains: list[list[float]] = [
+    [.1, .2],
+    [.3, .4],
+    [.5, .6],
+    [.7, .8]
+]
 
-result = net.predict([
-    [1, 1],
-    [0, 0]
-])
-print(result)
+targets: list[list[float]] = [
+    [0, 1],
+    [1, 0],
+    [0, 1],
+    [1, 0]
+]
 
+net = Net(2, 3, 2)
+net.learn(trains, targets)
